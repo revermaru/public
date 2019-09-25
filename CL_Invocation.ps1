@@ -1,4 +1,4 @@
-hello my name is kakakaka
+hello my name is kakakaka All rights reserved.
 AKIAPUOATHNMHHOHAJKNSKLSE
 kekekeke
 hohohohoho
